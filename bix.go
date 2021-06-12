@@ -13,12 +13,14 @@ import (
 	"time"
 	"unsafe"
 
+	"cloud.google.com/go/storage"
 	"github.com/biogo/hts/bgzf"
 	"github.com/biogo/hts/bgzf/index"
 	"github.com/biogo/hts/tabix"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
-	"github.com/brentp/vcfgo"
+	"github.com/carbocation/genomisc"
+	"github.com/carbocation/vcfgo"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +35,7 @@ type Bix struct {
 	// index for 'ref' and 'alt' columns if they were present.
 	refalt []int
 
-	file *os.File
+	file io.ReadSeekCloser
 	buf  *bufio.Reader
 }
 
@@ -63,10 +65,22 @@ func newShort(old *Bix) (*Bix, error) {
 		refalt:  old.refalt,
 	}
 	var err error
-	tbx.file, err = os.Open(tbx.path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "bix: error (re)opening %s", tbx.path)
+
+	if _, ok := old.file.(*os.File); ok {
+		// If the tbx.file is a physical file, reload from disk.
+		tbx.file, err = os.Open(tbx.path)
+		if err != nil {
+			return nil, errors.Wrapf(err, "bix: error (re)opening %s", tbx.path)
+		}
+	} else {
+		// If the tbx.file is an abstract io.Seeker, just seek back to the
+		// start.
+		tbx.file = old.file
+		if _, err := tbx.file.Seek(0, io.SeekStart); err != nil {
+			return nil, errors.Wrapf(err, "bix: error seeking to start of %s", tbx.path)
+		}
 	}
+
 	tbx.bgzf, err = bgzf.NewReader(tbx.file, old.workers)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bix: error creating new bgzf reader for %v", tbx.path)
@@ -88,8 +102,15 @@ func getModTime(path string) time.Time {
 	}
 }
 
-// New returns a &Bix
+// New returns a &Bix from on-disk files.
 func New(path string, workers ...int) (*Bix, error) {
+	return NewGCP(path, nil, workers...)
+}
+
+// NewGCP returns a &Bix from either on-disk files or, if a GCP client is
+// specified and the .vcf file begins with 'gs://', from a Google Storage object
+// connection that simulates seeking capabilities.
+func NewGCP(path string, client *storage.Client, workers ...int) (*Bix, error) {
 	var idx Index
 	var ext string
 
@@ -102,7 +123,7 @@ func New(path string, workers ...int) (*Bix, error) {
 		log.Printf("warning: data file %s is modified more recently than its index.", path)
 	}
 
-	f, err := os.Open(path + ext)
+	f, err := genomisc.MaybeOpenSeekerFromGoogleStorage(path+ext, client)
 	if err != nil {
 		return nil, errors.Wrapf(err, "bix: error on opening %s%s", path, ext)
 	}
@@ -131,7 +152,7 @@ func New(path string, workers ...int) (*Bix, error) {
 		n = workers[0]
 	}
 
-	b, err := os.Open(path)
+	b, err := genomisc.MaybeOpenSeekerFromGoogleStorage(path, client)
 	if err != nil {
 		return nil, err
 	}
