@@ -70,7 +70,6 @@ github.com/carbocation/bgen v0.0.0-20210318182738-fda1a0f352b0/go.mod h1:OurdCRZ
 github.com/carbocation/bgen v0.0.0-20210612124641-61ace4afb05a/go.mod h1:zvAgoK93GYljFc1AbKw0vZdr6jsfdHV0XkbvASM5INA=
 github.com/carbocation/bix v0.0.0-20190718140914-00aa7a7f205d/go.mod h1:CjCTMv/8p/YjBBcRQn6aIQLCdaDPaoFuHpLCHlpDT5o=
 github.com/carbocation/genomisc v0.0.0-20210307150845-e2efad427558/go.mod h1:+Asxoja1vk3weUjSbVoiGcoKqT/tsrcYzc19whQebsk=
-github.com/carbocation/genomisc v0.0.0-20210612014916-fa04c732f4ae h1:j6qVc14T++y+LEmGqORRd59LUQ6byOxsnIdENtzFx/w=
 github.com/carbocation/genomisc v0.0.0-20210612014916-fa04c732f4ae/go.mod h1:QJ7f6mZoAWwYT31nxt8owdP8M9nV21gijG676uVLTB4=
 github.com/carbocation/genomisc v0.0.0-20210612175623-de3deb62b137 h1:kHXWCzY83I1Z3f2DDxNoeiIk8ExznbWdHFCGOTxvF9Q=
 github.com/carbocation/genomisc v0.0.0-20210612175623-de3deb62b137/go.mod h1:yrEMXHgL1VorSnQuDqE+1Dh7UBccQP46v5Br6P+QUn0=
